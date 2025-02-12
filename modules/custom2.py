@@ -912,3 +912,38 @@ def find_neighbors(kmer, threshold):
 					new_prefix_list.append([prefix[0]+option, distance])
 		prefix_list=new_prefix_list
 	return prefix_list
+
+def filter_blat_psl(input_psl_file, output_psl_file, perfect_only=False):
+	'''
+	filters psl files to only return either the 'best' hits for every query
+	or 'perfect' hits for every query
+	'''
+	query_dict={}
+	output_file=open(output_psl_file, 'w')
+	for line in open(input_psl_file):
+		split_line=line.strip().split('\t')
+		if len(split_line)>3 and split_line[0].isdigit():
+			query=split_line[9]
+			query_size=int(split_line[10])
+			score=int(split_line[0])
+			query_dict.setdefault(query, [[], 0])
+			if perfect_only:
+				if score==query_size:
+					query_dict[query][0].append(split_line)
+					query_dict[query][1]=score
+			else:
+				if score>query_dict[query][1]:
+					query_dict[query][0]=[split_line]
+					query_dict[query][1]=score
+				elif score==query_dict[query][1]:
+					query_dict[query][0].append(split_line)
+		else:
+			output_file.write(line)
+	for query in sorted(list(query_dict.keys())):
+		filtered_hits=query_dict[query][0]
+		print('query is', query)
+#		print('filtered hits are', filtered_hits)
+		if filtered_hits:
+			for hit in filtered_hits:
+				output_file.write('\t'.join(hit)+'\n')
+	return query_dict
