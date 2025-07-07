@@ -947,3 +947,21 @@ def filter_blat_psl(input_psl_file, output_psl_file, perfect_only=False):
 			for hit in filtered_hits:
 				output_file.write('\t'.join(hit)+'\n')
 	return query_dict
+
+def cat_nanopore_reads(input_fastq_folder, output_fastq_folder):
+	'''
+	assumes input_fastq_folder contains fastq folders labeled by sample name which each have multiple gzipped fastq
+	files inside. Concatenates together all of the files in each sample folder and gzips them and sends each concatenated gzipped
+	output file to the output folder
+	'''
+	import os
+	import gzip
+	import subprocess
+	for sample in os.listdir(input_fastq_folder):
+		output_path=output_fastq_folder+'/'+sample+'.fastq'
+		catted_file=open(output_path, 'w')
+		for fastq_file in os.listdir(input_fastq_folder+'/'+sample):
+			fastq_path=input_fastq_folder+'/'+sample+'/'+fastq_file
+			for line in gzip.open(fastq_path, mode='rt'):
+				catted_file.write(line)
+		subprocess.call(['gzip', output_path])
